@@ -1,0 +1,2 @@
+SHARE_DIR = None
+UPLOAD_DIR = None

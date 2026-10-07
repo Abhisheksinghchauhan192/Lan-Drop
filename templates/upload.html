@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LAN-Drop Upload</title>
+
+<style>
+body{
+    background:#111;
+    color:#eee;
+    font-family:system-ui,sans-serif;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:700px;
+    margin:auto;
+}
+
+.card{
+    background:#1a1a1a;
+    border:1px solid #2a2a2a;
+    border-radius:12px;
+    padding:25px;
+}
+
+button{
+    background:#10b981;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+input[type="file"]{
+    margin:15px 0;
+    width:100%;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+<div class="card">
+
+<h1>📤 LAN-Drop Upload</h1>
+
+<p>
+<a href="/uploads">
+📥 View Upload Inbox
+</a>
+</p>
+
+<form method="POST" enctype="multipart/form-data">
+
+<label>Select File/Files</label>
+<input
+    type="file"
+    name="files"
+    multiple
+    >
+
+    <br><br>
+    
+    <label>Select Folder</label>
+    <br>
+    
+    <input
+    type="file"
+    name="folder"
+    webkitdirectory
+    directory
+    multiple>
+    
+<br><br>
+<button type="submit">
+Upload
+</button>
+
+</form>
+
+</div>
+</div>
+
+</body>
+</html>
