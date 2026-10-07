@@ -127,7 +127,7 @@ sudo apt install qrencode
 Clone repository:
 
 ```bash
-git clone https://github.com/USERNAME/lan-drop.git
+git clone https://github.com/Abhisheksinghchauhan192/Lan-Drop.git
 
 cd lan-drop
 ```
