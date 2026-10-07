@@ -40,13 +40,8 @@ multipart form parsing.
 from http.server import (
     BaseHTTPRequestHandler
 )
-
-from multipart import (
-    MultipartParser,
-    parse_options_header
-)
-
 from pathlib import Path
+import re
 from utils.templates import (
     load_template
 )
@@ -392,83 +387,125 @@ LAN-Drop v1.0
     # which need to be installed systemwide 
     
     def do_POST(self):
+        content_type = self.headers.get("Content-Type", "")
+        if "multipart/form-data" not in content_type:
+            self.send_error(400, "Expected multipart/form-data")
+            return
 
-        content_type = self.headers.get(
-            "Content-Type"
-        )
+        # Extract boundary
+        match = re.search(r'boundary=([^;]+)', content_type)
+        if not match:
+            self.send_error(400, "Missing boundary")
+            return
+        
+        boundary = match.group(1).strip('"\'').encode()
+        delimiter = b"--" + boundary
+        content_length = int(self.headers.get("Content-Length", 0))
+
+        if content_length <= 0:
+            self.send_error(411, "Length Required")
+            return
 
         client = self.get_client_name()
-        
-        if not content_type:
-            self.send_error(400)
-            return
-
-        if "multipart/form-data" not in content_type:
-            self.send_error(400)
-            return
-
-        content_length = int(
-            self.headers.get(
-                "Content-Length",
-                0
-            )
-        )
-
-        _, options = parse_options_header(
-            content_type
-        )
-
-        boundary = options.get(
-            "boundary"
-        )
-
-        if not boundary:
-            self.send_error(400)
-            return
-
-        parser = MultipartParser(
-            self.rfile,
-            boundary.encode(),
-            content_length
-        )
-
         saved_files = []
 
-        for part in parser:
+        # Stream state
+        CHUNK_SIZE = 64 * 1024
+        buffer = bytearray()
+        bytes_read_total = 0
+        current_file = None
+        target_path = None
 
-            if not part.filename:
-                continue
+        def read_chunk():
+            nonlocal bytes_read_total
+            to_read = min(CHUNK_SIZE, content_length - bytes_read_total)
+            if to_read <= 0:
+                return b""
+            data = self.rfile.read(to_read)
+            bytes_read_total += len(data)
+            return data
 
-            target = self.get_upload_target(
-                part.filename
-            )
+        # 1. Advance to first boundary
+        while bytes_read_total < content_length:
+            chunk = read_chunk()
+            if not chunk:
+                break
+            buffer.extend(chunk)
+            idx = buffer.find(delimiter)
+            if idx != -1:
+                buffer = buffer[idx + len(delimiter):]
+                break
 
-            part.save_as(
-                str(target)
-            )
+        # 2. Parse parts sequentially
+        while True:
+            # Strip leading CRLF
+            if buffer.startswith(b"\r\n"):
+                buffer = buffer[2:]
 
-            relative = str(
-                target.relative_to(
-                    config.UPLOAD_DIR
-                )
-            )
+            if buffer.startswith(b"--"):  # Final closing boundary
+                break
 
-            saved_files.append(
-                relative
-            )
+            # Read until headers end (\r\n\r\n)
+            while b"\r\n\r\n" not in buffer:
+                chunk = read_chunk()
+                if not chunk:
+                    break
+                buffer.extend(chunk)
 
-            print(
-                f"[Received] | {relative} | from :- {client}"
-            )
-            
+            header_end = buffer.find(b"\r\n\r\n")
+            if header_end == -1:
+                break
+
+            header_bytes = bytes(buffer[:header_end])
+            buffer = buffer[header_end + 4:]
+
+            # Extract filename from headers
+            header_text = header_bytes.decode("utf-8", errors="replace")
+            fn_match = re.search(r'filename="([^"]+)"', header_text)
+            filename = fn_match.group(1) if fn_match else None
+
+            if filename:
+                target_path = self.get_upload_target(filename)
+                current_file = open(target_path, "wb")
+                print(f"[RECEIVING] {filename} -> {target_path}")
+
+            # Stream payload directly to disk until next boundary
+            next_boundary = b"\r\n" + delimiter
+            while True:
+                idx = buffer.find(next_boundary)
+                if idx != -1:
+                    # Flush up to the boundary directly to disk
+                    if current_file:
+                        current_file.write(buffer[:idx])
+                        current_file.close()
+                        current_file = None
+                        relative = str(target_path.relative_to(config.UPLOAD_DIR))
+                        saved_files.append(relative)
+                    buffer = buffer[idx + len(next_boundary):]
+                    break
+                else:
+                    # Keep a window at the end to prevent splitting a boundary marker across chunks
+                    safe_flush = len(buffer) - len(next_boundary)
+                    if safe_flush > 0:
+                        if current_file:
+                            current_file.write(buffer[:safe_flush])
+                        buffer = buffer[safe_flush:]
+
+                    chunk = read_chunk()
+                    if not chunk:
+                        if current_file:
+                            current_file.write(buffer)
+                            current_file.close()
+                            current_file = None
+                        break
+                    buffer.extend(chunk)
+
         if not saved_files:
-
-            self.send_error(400)
+            self.send_error(400, "No files uploaded")
             return
 
-        self.send_success_page(
-            saved_files
-        )
+        self.send_success_page(saved_files)
+
 
     # showing LAN-Drop files
     def show_uploads(self):

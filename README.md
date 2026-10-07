@@ -24,11 +24,9 @@ LAN-Drop allows devices connected to the same local network to share files and f
 Works on:
 
 - Linux
-    - install dependencies Globally (recommended)
-- Windows
+ - Windows
     - currently QR support is not available
 - macOS
-    - Install dependencies Globally (recommended)
 
 Access from:
 
@@ -55,14 +53,14 @@ using any modern web browser.
 Displays useful terminal logs:
 
 ```text
-[RECEIVED] movie.mkv from Android (192.168.1.105)
+[RECEIVING] movie.mkv from Android (192.168.1.105)
 
 [DOWNLOADED] Linux.iso by Windows PC (192.168.1.121)
 ```
 
 ### Large File Support
 
-Uses `python-multipart` for multipart file handling.
+Uses custom multipart implementation for multipart file handling.
 
 Successfully tested with:
 
@@ -107,7 +105,7 @@ Successfully tested with:
 ### Python Dependencies
 
 ```bash
-pip install python-multipart
+NONE
 ```
 
 ### QR Code Generation
@@ -135,7 +133,7 @@ cd lan-drop
 Install dependency:
 
 ```bash
-pip install python-multipart
+NONE
 ```
 
 Install QR tool:
@@ -161,7 +159,7 @@ https://www.python.org/downloads/
 Install dependency:
 
 ```powershell
-pip install python-multipart
+NONE
 ```
 
 Run:
@@ -187,7 +185,7 @@ brew install python
 Install dependency:
 
 ```bash
-pip3 install python-multipart
+NONE
 ```
 Install qrcode:
 ```bash
@@ -315,7 +313,7 @@ lan-drop/
 │
 ├── README.md
 ├── LICENSE
-└── requirements.txt
+
 ```
 
 ---
@@ -337,10 +335,8 @@ Check:
 Verify:
 
 ```bash
-pip install python-multipart
+DO not referesh page until Uploading Finishes.
 ```
-
-is installed correctly.
 
 ---
 
