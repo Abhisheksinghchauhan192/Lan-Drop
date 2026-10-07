@@ -1,5 +1,49 @@
+"""
+LAN-Drop
+
+Cross-platform LAN file sharing tool.
+
+Author:
+    Abhishek Singh Chauhan
+
+Description:
+    Provides local network file sharing
+    through a lightweight web interface.
+
+Supported Platforms:
+    - Linux
+    - Window*
+    - macOS
+        
+"""
+#
+#
+#
+#
+#
+#
+"""
+Upload Handler
+
+Provides:
+
+- Single file uploads
+- Multiple file uploads
+- Folder uploads
+- Folder structure preservation
+- Duplicate filename protection
+
+Uses python-multipart for efficient
+multipart form parsing.
+"""
+
 from http.server import (
     BaseHTTPRequestHandler
+)
+
+from multipart import (
+    MultipartParser,
+    parse_options_header
 )
 
 from pathlib import Path
@@ -42,59 +86,6 @@ class UploadHandler(BaseHTTPRequestHandler):
 
         self.wfile.write(encoded)
 
-    def save_uploaded_file(
-        self,
-        relative_path,
-        filedata
-    ):
-        target = self.get_upload_target(
-            relative_path
-        )
-
-        with open(
-            target,
-            "wb"
-        ) as f:
-
-            f.write(filedata)
-
-        print(
-            f"[UPLOAD] "
-            f"{target.relative_to(config.UPLOAD_DIR)}"
-        )
-
-        return str(
-            target.relative_to(
-                config.UPLOAD_DIR
-            )
-        )
-
-    def parse_filename(
-        self,
-        header_bytes
-    ):
-
-        if b'filename="' not in header_bytes:
-            return None
-
-        try:
-
-            filename = (
-                header_bytes
-                .split(b'filename="')[1]
-                .split(b'"')[0]
-                .decode(
-                    "utf-8",
-                    errors="ignore"
-                )
-            )
-
-            return filename
-
-        except Exception:
-
-            return None
-    
     
     def get_upload_target(
         self,
@@ -139,34 +130,128 @@ class UploadHandler(BaseHTTPRequestHandler):
         )
 
         response = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <meta charset="utf-8">
-    <title>Upload Complete</title>
-    </head>
+<!DOCTYPE html>
+<html>
 
-    <body>
+<head>
 
-    <h2>Upload Successful</h2>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <p>
-    Saved {len(saved_files)} file(s)
-    </p>
+<title>Upload Complete</title>
 
-    <ul>
-    {files_html}
-    </ul>
+<style>
 
-    <br>
+body{{
+    background:#111;
+    color:#eee;
+    font-family:system-ui,sans-serif;
+    margin:0;
+    padding:20px;
+}}
 
-    <a href="/">
-    Upload More Files
-    </a>
+.container{{
+    max-width:700px;
+    margin:auto;
+}}
 
-    </body>
-    </html>
-    """
+.card{{
+    background:#1a1a1a;
+    border:1px solid #2a2a2a;
+    border-radius:16px;
+    padding:24px;
+}}
+
+h1{{
+    margin-top:0;
+}}
+
+.success{{
+    color:#10b981;
+    font-size:1.1rem;
+    margin-bottom:20px;
+}}
+
+ul{{
+    list-style:none;
+    padding:0;
+}}
+
+li{{
+    padding:10px;
+    border-bottom:1px solid #2a2a2a;
+}}
+
+li:last-child{{
+    border-bottom:none;
+}}
+
+.actions{{
+    margin-top:24px;
+}}
+
+.button{{
+    display:inline-block;
+    background:#10b981;
+    color:white;
+    text-decoration:none;
+    padding:10px 16px;
+    border-radius:8px;
+    margin-right:10px;
+}}
+
+.button.secondary{{
+    background:#333;
+}}
+
+.footer{{
+    margin-top:24px;
+    color:#666;
+    font-size:.85rem;
+}}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h1>✅ Upload Complete</h1>
+
+<p class="success">
+Successfully uploaded {len(saved_files)} file(s)
+</p>
+
+<ul>
+{files_html}
+</ul>
+
+<div class="actions">
+
+<a href="/" class="button">
+📤 Upload More
+</a>
+
+<a href="/uploads" class="button secondary">
+📥 Open Inbox
+</a>
+
+</div>
+
+<div class="footer">
+LAN-Drop v1.0
+</div>
+
+</div>
+</div>
+
+</body>
+</html>
+"""
 
         encoded = response.encode(
             "utf-8"
@@ -188,25 +273,139 @@ class UploadHandler(BaseHTTPRequestHandler):
 
         self.wfile.write(encoded)
 
+
+    # get the client Infromation
+    def get_client_name(self):
+
+        ip = self.client_address[0]
+
+        user_agent = self.headers.get(
+            "User-Agent",
+            ""
+        )
+
+        if "Android" in user_agent:
+            return f"Android ({ip})"
+
+        if "iPhone" in user_agent:
+            return f"iPhone ({ip})"
+
+        if "Windows" in user_agent:
+            return f"Windows PC ({ip})"
+
+        if "Linux" in user_agent:
+            return f"Linux PC ({ip})"
+
+        return ip
+
+
+    # Uncomment below method for using Ram buffer and No Stremed Output 
+    # This one will chock ram for large files.
+    # if streamed one doesn't works for your system comment that one and use this one instead
+    # but keep in mind the treadoff of this method.
+    #It Reads entire request into memory.
+
+    # def do_POST(self):
+
+    #     content_type = self.headers.get(
+    #         "Content-Type"
+    #     )
+
+    #     if not content_type:
+    #         self.send_error(400)
+    #         return
+
+    #     if "boundary=" not in content_type:
+    #         self.send_error(400)
+    #         return
+
+    #     boundary = (
+    #         content_type
+    #         .split("boundary=")[-1]
+    #         .encode()
+    #     )
+
+    #     content_length = int(
+    #         self.headers.get(
+    #             "Content-Length",
+    #             0
+    #         )
+    #     )
+
+    #     data = self.rfile.read(
+    #         content_length
+    #     )
+
+    #     parts = data.split(
+    #         b"--" + boundary
+    #     )
+
+    #     saved_files = []
+
+    #     for part in parts:
+
+    #         if b'filename="' not in part:
+    #             continue
+
+    #         try:
+
+    #             header, filedata = part.split(
+    #                 b"\r\n\r\n",
+    #                 1
+    #             )
+
+    #         except ValueError:
+    #             continue
+
+    #         filename = self.parse_filename(
+    #             header
+    #         )
+
+    #         if not filename:
+    #             continue
+
+    #         filedata = filedata.rsplit(
+    #             b"\r\n",
+    #             1
+    #         )[0]
+
+    #         saved_path = self.save_uploaded_file(
+    #             filename,
+    #             filedata
+    #         )
+
+    #         saved_files.append(
+    #             saved_path
+    #         )
+
+    #     if not saved_files:
+
+    #         self.send_error(400)
+    #         return
+
+    #     self.send_success_page(
+    #         saved_files
+    #     )
+
+
+    # This one is Streamed Upload using the python library multipart 
+    # which need to be installed systemwide 
+    
     def do_POST(self):
 
         content_type = self.headers.get(
             "Content-Type"
         )
 
+        client = self.get_client_name()
+        
         if not content_type:
             self.send_error(400)
             return
 
-        if "boundary=" not in content_type:
+        if "multipart/form-data" not in content_type:
             self.send_error(400)
             return
-
-        boundary = (
-            content_type
-            .split("boundary=")[-1]
-            .encode()
-        )
 
         content_length = int(
             self.headers.get(
@@ -215,52 +414,53 @@ class UploadHandler(BaseHTTPRequestHandler):
             )
         )
 
-        data = self.rfile.read(
-            content_length
+        _, options = parse_options_header(
+            content_type
         )
 
-        parts = data.split(
-            b"--" + boundary
+        boundary = options.get(
+            "boundary"
+        )
+
+        if not boundary:
+            self.send_error(400)
+            return
+
+        parser = MultipartParser(
+            self.rfile,
+            boundary.encode(),
+            content_length
         )
 
         saved_files = []
 
-        for part in parts:
+        for part in parser:
 
-            if b'filename="' not in part:
+            if not part.filename:
                 continue
 
-            try:
-
-                header, filedata = part.split(
-                    b"\r\n\r\n",
-                    1
-                )
-
-            except ValueError:
-                continue
-
-            filename = self.parse_filename(
-                header
+            target = self.get_upload_target(
+                part.filename
             )
 
-            if not filename:
-                continue
+            part.save_as(
+                str(target)
+            )
 
-            filedata = filedata.rsplit(
-                b"\r\n",
-                1
-            )[0]
-
-            saved_path = self.save_uploaded_file(
-                filename,
-                filedata
+            relative = str(
+                target.relative_to(
+                    config.UPLOAD_DIR
+                )
             )
 
             saved_files.append(
-                saved_path
+                relative
             )
 
+            print(
+                f"[Received] | {relative} | from :- {client}"
+            )
+            
         if not saved_files:
 
             self.send_error(400)
@@ -269,7 +469,6 @@ class UploadHandler(BaseHTTPRequestHandler):
         self.send_success_page(
             saved_files
         )
-
 
     # showing LAN-Drop files
     def show_uploads(self):

@@ -1,4 +1,37 @@
-    
+"""
+LAN-Drop
+
+Cross-platform LAN file sharing tool.
+
+Author:
+    Abhishek Singh Chauhan
+
+Description:
+    Provides local network file sharing
+    through a lightweight web interface.
+
+Supported Platforms:
+    - Linux
+    - Window*
+    - macOS
+        
+"""    
+#
+#
+#
+#
+"""
+Download Handler
+
+Provides:
+
+- Directory browsing
+- File downloads
+- Folder navigation
+- File size display
+- Download logging
+"""
+
 from http.server import (
     BaseHTTPRequestHandler
 )
@@ -7,7 +40,6 @@ from utils.templates import (
     load_template
 )
 import mimetypes
-from pathlib import Path
 from urllib.parse import (
     unquote
 )
@@ -129,13 +161,37 @@ class DownloadHandler(BaseHTTPRequestHandler):
 
         self.wfile.write(encoded)
 
+    def get_client_name(self):
+
+        ip = self.client_address[0]
+
+        user_agent = self.headers.get(
+            "User-Agent",
+            ""
+        )
+
+        if "Android" in user_agent:
+            return f"Android ({ip})"
+
+        if "iPhone" in user_agent:
+            return f"iPhone ({ip})"
+
+        if "Windows" in user_agent:
+            return f"Windows PC ({ip})"
+
+        if "Linux" in user_agent:
+            return f"Linux PC ({ip})"
+
+        return ip
+
     def send_file(self, file_path):
 
         mime_type, _ = mimetypes.guess_type(file_path)
-
+        client = self.get_client_name()
+            
         if mime_type is None:
             mime_type = "application/octet-stream"
-        print(f"[DOWNLOAD] {file_path.name}")
+        print(f"[DOWNLOADED] {file_path.name} | by:- {client}")
         self.send_response(200)
         self.send_header("Content-Type", mime_type)
         self.send_header(

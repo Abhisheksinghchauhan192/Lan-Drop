@@ -1,90 +1,358 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>LAN-Drop Upload</title>
 
 <style>
+
+*{
+    box-sizing:border-box;
+}
+
 body{
+    margin:0;
+    padding:20px;
     background:#111;
     color:#eee;
     font-family:system-ui,sans-serif;
-    margin:0;
-    padding:20px;
 }
 
 .container{
-    max-width:700px;
+    max-width:750px;
     margin:auto;
 }
 
 .card{
     background:#1a1a1a;
     border:1px solid #2a2a2a;
-    border-radius:12px;
-    padding:25px;
+    border-radius:16px;
+    padding:28px;
 }
 
-button{
-    background:#10b981;
-    color:white;
-    border:none;
-    padding:12px 20px;
-    border-radius:8px;
-    cursor:pointer;
+h1{
+    margin-top:0;
+    margin-bottom:10px;
+}
+
+.subtitle{
+    color:#999;
+    margin-bottom:25px;
+}
+
+.actions{
+    margin-bottom:25px;
+}
+
+.actions a{
+    color:#6cb6ff;
+    text-decoration:none;
+}
+
+.section{
+    margin-bottom:24px;
+}
+
+.section h3{
+    margin-bottom:10px;
+    font-size:1rem;
 }
 
 input[type="file"]{
-    margin:15px 0;
     width:100%;
+    padding:12px;
+    background:#222;
+    color:#ddd;
+    border:1px solid #333;
+    border-radius:10px;
 }
+
+button{
+    width:100%;
+    border:none;
+    border-radius:10px;
+    padding:14px;
+    background:#10b981;
+    color:white;
+    font-size:1rem;
+    font-weight:600;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#0ea371;
+}
+
+button:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
+
+#progress-wrapper{
+    margin-top:20px;
+    height:16px;
+    background:#222;
+    border-radius:999px;
+    overflow:hidden;
+    display:none;
+}
+
+#progress-bar{
+    width:0%;
+    height:100%;
+    background:#10b981;
+    transition:width .15s linear;
+}
+
+#progress-text{
+    text-align:center;
+    color:#aaa;
+    margin-top:10px;
+    min-height:24px;
+}
+
+.info{
+    margin-top:15px;
+    padding:12px;
+    border-radius:10px;
+    background:#151515;
+    border:1px solid #2a2a2a;
+    color:#aaa;
+    font-size:.92rem;
+}
+
+.footer{
+    margin-top:25px;
+    text-align:center;
+    color:#666;
+    font-size:.85rem;
+}
+
 </style>
 
 </head>
+
 <body>
 
 <div class="container">
+
 <div class="card">
 
-<h1>📤 LAN-Drop Upload</h1>
+<h1>📦 LAN-Drop</h1>
 
-<p>
-<a href="/uploads">
-📥 View Upload Inbox
-</a>
+<p class="subtitle">
+Fast local network file sharing
 </p>
 
-<form method="POST" enctype="multipart/form-data">
+<div class="actions">
+<a href="/uploads">
+📥 Open Inbox
+</a>
+</div>
 
-<label>Select File/Files</label>
+<form
+    id="upload-form"
+    method="POST"
+    enctype="multipart/form-data"
+>
+
+<div class="section">
+
+<h3>📄 Select Files</h3>
+
 <input
     type="file"
     name="files"
     multiple
-    >
+>
 
-    <br><br>
-    
-    <label>Select Folder</label>
-    <br>
-    
-    <input
+</div>
+
+<div class="section">
+
+<h3>📁 Select Folder</h3>
+
+<input
     type="file"
     name="folder"
     webkitdirectory
     directory
-    multiple>
-    
-<br><br>
-<button type="submit">
-Upload
+    multiple
+>
+
+</div>
+
+<button
+    id="upload-btn"
+    type="submit"
+>
+🚀 Upload
 </button>
 
 </form>
 
+<div id="progress-wrapper">
+    <div id="progress-bar"></div>
+</div>
+
+<div id="progress-text">
+Ready
+</div>
+
+<div class="info">
+
+Files are uploaded directly to the host device.<br>
+Folder structure is preserved automatically.
+
+</div>
+
+<div class="footer">
+LAN-Drop v1.0
+</div>
+
 </div>
 </div>
+
+<script>
+
+const form =
+document.getElementById(
+    "upload-form"
+);
+
+const button =
+document.getElementById(
+    "upload-btn"
+);
+
+const progressWrapper =
+document.getElementById(
+    "progress-wrapper"
+);
+
+const progressBar =
+document.getElementById(
+    "progress-bar"
+);
+
+const progressText =
+document.getElementById(
+    "progress-text"
+);
+
+form.addEventListener(
+    "submit",
+    function(event){
+
+        event.preventDefault();
+
+        const formData =
+        new FormData(form);
+
+        if(
+            [...formData.keys()]
+            .length === 0
+        ){
+            return;
+        }
+
+        const xhr =
+        new XMLHttpRequest();
+
+        button.disabled = true;
+
+        progressWrapper.style.display =
+        "block";
+
+        progressBar.style.width =
+        "0%";
+
+        progressText.textContent =
+        "Starting upload...";
+
+        xhr.upload.addEventListener(
+            "progress",
+            function(event){
+
+                if(
+                    !event.lengthComputable
+                ){
+                    return;
+                }
+
+                const percent =
+                Math.round(
+                    (
+                        event.loaded /
+                        event.total
+                    ) * 100
+                );
+
+                progressBar.style.width =
+                percent + "%";
+
+                progressText.textContent =
+                "Uploading... " +
+                percent +
+                "%";
+            }
+        );
+
+        xhr.onload =
+        function(){
+
+            if(
+                xhr.status >= 200 &&
+                xhr.status < 300
+            ){
+
+                progressBar.style.width =
+                "100%";
+
+                progressText.textContent =
+                "Upload Complete ✓";
+
+                document.open();
+                document.write(
+                    xhr.responseText
+                );
+                document.close();
+
+            }else{
+
+                progressText.textContent =
+                "Upload Failed";
+
+                button.disabled = false;
+            }
+        };
+
+        xhr.onerror =
+        function(){
+
+            progressText.textContent =
+            "Network Error";
+
+            button.disabled = false;
+        };
+
+        xhr.open(
+            "POST",
+            "/",
+            true
+        );
+
+        xhr.send(
+            formData
+        );
+    }
+);
+
+</script>
 
 </body>
 </html>

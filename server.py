@@ -1,5 +1,47 @@
 #!/usr/bin/env python3
 
+"""
+LAN-Drop
+
+Cross-platform LAN file sharing tool.
+
+Author:
+    Abhishek Singh Chauhan
+
+Description:
+    Provides local network file sharing
+    through a lightweight web interface.
+
+Supported Platforms:
+    - Linux
+    - Window*
+    - macOS
+        
+"""
+
+#
+#
+#
+#
+#
+#
+"""
+LAN-Drop Main Entry Point
+
+Starts:
+
+- Download server
+- Upload server
+
+Displays:
+
+- Local URLs
+- Network URLs
+- QR Code
+
+Handles graceful shutdown.
+"""
+
 from http.server import HTTPServer 
 from socketserver import ThreadingMixIn
 import threading
@@ -7,19 +49,11 @@ import signal
 import sys
 import config
 from pathlib import Path
-from urllib.parse import unquote
-from html import escape
-import mimetypes
-import os
 from utils.qr import show_qr
 from utils.network import get_local_ip
 
 from utils.file_utils import (
     format_size,
-    get_unique_filename,
-    get_icon,
-    sanitize_filename,
-    ensure_upload_path
 )
 
 from handlers.download import (
@@ -141,14 +175,14 @@ if __name__ == "__main__":
     print(f"📥 Download:")
     print(f"   {download_url}")
     print()
-    print(f"📤 Upload:")
+    print(f"📤 To Receive:")
     print(f"   {upload_url}")
     print()
     print(f"📁 Incoming Files:")
     print(f"   {UPLOAD_DIR}")
 
     print()
-    print("📱 Upload QR:")
+    print("📱 Recieving  QR:")
     print()
 
     show_qr(upload_url)
