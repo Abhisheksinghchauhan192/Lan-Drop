@@ -1,8 +1,15 @@
 # LAN-Drop
 
-A lightweight, cross-platform LAN file sharing tool built with Python.
+**Lightweight, cross-platform file sharing over your local network.**
 
-LAN-Drop allows devices connected to the same local network to share files and folders through a simple web browser interface. No accounts, cloud services, or internet connection required.
+LAN-Drop is a Python-based tool that lets devices connected to the same local network upload and download files through a web browser. No accounts, cloud services, or internet connection are required for local file transfers.
+
+- **No required third-party Python dependencies**
+- **Two simple web interfaces:** download and upload
+- **Tested on Cross-Plateforms**
+- **Mobile-friendly and supports large-file uploads**
+
+> **Performance:** Speeds of 50+ Mbps were observed during testing over Wi-Fi 5 with an Android device. Actual performance depends on the network, Wi-Fi signal, hardware, and connected devices.
 
 ---
 
@@ -10,89 +17,93 @@ LAN-Drop allows devices connected to the same local network to share files and f
 
 ### File Sharing
 
-- Download files from the host device
-- Upload files from phones, tablets, and computers
-- Multiple file upload support
-- Folder upload support
-- Preserves folder structure during upload
-- Automatic duplicate filename handling
-- Great to run this on Host Linux Machine(works seamlessly)
-- It will store Uploaded file on $USERS Desktop Directory
+- Download files from the host computer.
+- Upload files from phones, tablets, and computers.
+- Upload multiple files at once.
+- Upload entire folders using a compatible browser.
+- Preserve folder structure during uploads.
+- Handle duplicate filenames without silently overwriting existing files.
+- Browse shared directories and view file sizes.
+- Save incoming files to a `LAN-Drop` folder on the host user's Desktop.
 
-### Cross Platform
+### Cross-Platform Support
 
-Works on:
-
-- Linux
- - Windows
-    - currently QR support is not available
-- macOS
-
-Access from:
-
-- Android
-- iPhone
+**Host operating systems**
 - Linux
 - Windows
 - macOS
 
-using any modern web browser.
+**Client devices**
+- Android
+- iPhone and iPad
+- Linux
+- Windows
+- macOS
+
+Access LAN-Drop from a modern web browser on a device connected to the same local network.
 
 ### User Experience
 
-- Mobile-friendly interface
+- Responsive, mobile-friendly interface
 - Upload progress bar
-- QR code for quick access
-- Upload inbox viewer
-- Dark modern UI
-- File size display
-- Download directory browsing
+- Optional QR code for quick access
+- Upload inbox for received files
+- Dark, modern UI
+- File-size display
+- Directory browsing and navigation
 
-### Logging
+### Terminal Logging
 
-Displays useful terminal logs:
+LAN-Drop displays useful information about file transfers in the terminal.
+
+Example:
 
 ```text
 [RECEIVING] movie.mkv from Android (192.168.1.105)
-
 [DOWNLOADED] Linux.iso by Windows PC (192.168.1.121)
 ```
 
-### Large File Support
+*Example log messages; the exact format may vary.*
 
-Uses custom multipart implementation for multipart file handling.
+### Large-File Support
 
-Successfully tested with:
+LAN-Drop uses a custom streaming multipart implementation to process uploads without intentionally buffering the entire uploaded file in memory.
 
-- Single files
-- Multiple files
+Tested scenarios include:
+
+- Single-file uploads
+- Multiple-file uploads
 - Folder uploads
 - Large audio files
 - Large media files
+
+Actual upload performance and maximum practical file size depend on available storage, memory, network conditions, and the client browser.
 
 ---
 
 ## Screenshots
 
-### Terminal Startup View
-![Terminal View](images/ToolTerminalStart.png)
-### Download Page
+### Terminal Startup
 
-![Download Page](images/DownloadVIew.png)
-![Download Page2](images/DownloadView2.png)
+![LAN-Drop terminal startup](images/ToolTerminalStart.png)
 
-### Upload Page
+### Download Interface
 
-![Upload Page](images/UploadView1.png)
+![Download page](images/DownloadVIew.png)
 
-### Upload Status
+![Download page with directory browsing](images/DownloadView2.png)
 
-![Upload Progress](images/Upload_Status.png)
+### Upload Interface
+
+![Upload page](images/UploadView1.png)
+
+### Upload Progress
+
+![Upload progress status](images/Upload_Status.png)
 
 ### Upload Inbox
 
-![Upload Inbox](images/Upload_index.png)
-
+![Upload inbox](images/Upload_index.png)
 
 ---
 
@@ -101,105 +112,57 @@ Successfully tested with:
 ### Software
 
 - Python 3.10 or newer
+- A local network connecting the host and client devices
+- A modern web browser on each client device
 
 ### Python Dependencies
 
-```bash
-NONE
-```
+**None required for the core application.**
 
-### QR Code Generation
+LAN-Drop uses Python's standard library for its core file-sharing functionality. QR-code generation is optional and depends on an available QR generator.
 
-Linux:
+### Optional QR-Code Support
 
-```bash
-sudo apt install qrencode
-```
+QR-code support makes it easier to open LAN-Drop on another device.
 
----
-
-## Installation
-
-### Linux
-
-Clone repository:
-
-```bash
-git clone https://github.com/Abhisheksinghchauhan192/Lan-Drop.git
-
-cd lan-drop
-```
-
-Install dependency:
-
-```bash
-NONE
-```
-
-Install QR tool:
+**Linux — recommended**
 
 ```bash
 sudo apt install qrencode
 ```
 
-Run:
+Alternatively, on Ubuntu or Debian-based distributions:
 
 ```bash
-python3 server.py
+sudo apt install python3-qrcode
 ```
 
----
-
-### Windows
-
-Install Python from:
-
-https://www.python.org/downloads/
-
-Install dependency:
+**Windows**
 
 ```powershell
-NONE
+python -m pip install qrcode
 ```
 
-Run:
+**macOS — recommended**
 
-```powershell
-python server.py
-```
-
-Note:
-
-QR code generation currently relies on the Linux `qrencode` utility and may require future Windows-specific support.
-
----
-
-### macOS
-
-Install Python:
-
-```bash
-brew install python
-```
-
-Install dependency:
-
-```bash
-NONE
-```
-Install qrcode:
 ```bash
 brew install qrencode
 ```
-Run:
 
-```bash
-python3 server.py
-```
+These are optional additions, not mandatory installation steps. If QR generation is unavailable, use the LAN URLs printed in the terminal.
 
 ---
 
-## Usage
+## Installation and Setup
+
+### Linux
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Abhisheksinghchauhan192/Lan-Drop.git
+cd Lan-Drop
+```
 
 Start LAN-Drop:
 
@@ -207,48 +170,151 @@ Start LAN-Drop:
 python3 server.py
 ```
 
-Example output:
+Optional: install a QR-code generator if you want QR-code support.
+
+```bash
+sudo apt install qrencode
+```
+
+### Windows
+
+1. Install Python 3.10 or newer from [python.org](https://www.python.org/downloads/).
+2. Download or clone the LAN-Drop repository.
+3. Open PowerShell or Command Prompt in the folder containing `server.py`.
+
+Start LAN-Drop:
+
+```powershell
+python server.py
+```
+
+If `python` is not recognized, try:
+
+```powershell
+py -3 server.py
+```
+
+QR-code generation is optional.
+
+### macOS
+
+Install Python if necessary. With Homebrew:
+
+```bash
+brew install python
+```
+
+Download or clone the repository, then open a terminal in the project directory.
+
+Start LAN-Drop:
+
+```bash
+python3 server.py
+```
+
+Optional: install the native QR-code utility:
+
+```bash
+brew install qrencode
+```
+
+---
+
+## Usage
+
+### 1. Start LAN-Drop
+
+Run the appropriate command for your operating system from the directory containing `server.py`.
+
+**Linux and macOS**
+
+```bash
+python3 server.py
+```
+
+**Windows**
+
+```powershell
+python server.py
+```
+
+By default, LAN-Drop shares the directory configured as its default shared directory. When running it directly from the project directory, this is normally the directory containing `server.py`.
+
+### 2. Share a Custom Directory
+
+You can pass a directory path as an argument to share a different folder.
+
+**Linux**
+
+```bash
+python3 server.py "/home/USER/Desktop"
+```
+
+**Windows**
+
+```powershell
+python server.py "C:\Users\YourName\Downloads"
+```
+
+**macOS**
+
+```bash
+python3 server.py "$HOME/Downloads"
+```
+
+Replace the example paths with the directory you want to share. Keep paths containing spaces inside quotation marks.
+
+### 3. Open the LAN URLs
+
+On startup, LAN-Drop displays the available addresses and the incoming-files directory.
+
+Example:
 
 ```text
 ==================================================
-               LAN-Drop
+                  LAN-Drop
 ==================================================
 
-📂 Sharing:
-   /home/user/Downloads
+Sharing:
+  /home/user/Downloads
 
-📥 Download:
-   http://192.168.1.50:3000
+Download:
+  http://192.168.1.50:3000
 
-📤 Upload:
-   http://192.168.1.50:3001
+Upload:
+  http://192.168.1.50:3001
 
-📁 Incoming Files:
-   /home/user/LAN-Drop
+Incoming Files:
+  /home/user/Desktop/LAN-Drop
 ==================================================
 ```
 
-Open the displayed URL from any device connected to the same network.
+The addresses above are examples. Use the actual URLs printed by your instance.
+
+- **Port 3000:** browse and download shared files.
+- **Port 3001:** upload files to the host.
+
+Open the relevant URL in a browser on another device connected to the same local network. You can also scan the displayed QR code when available.
+
+Press **Ctrl+C** in the host terminal to stop LAN-Drop.
 
 ---
 
 ## Uploading Files
 
-Open:
+Open the upload address in a browser:
 
 ```text
 http://HOST-IP:3001
 ```
 
-You can:
+Replace `HOST-IP` with the host computer's LAN IP address.
 
-- Upload a single file
-- Upload multiple files
-- Upload entire folders
+You can upload a single file, multiple files, or entire folders where supported by the browser.
 
-Folder structure is preserved automatically.
+### Example
 
-Example:
+Suppose you upload this folder:
 
 ```text
 Project/
@@ -258,7 +324,7 @@ Project/
     └── logo.png
 ```
 
-Uploaded result:
+The uploaded result retains the folder structure:
 
 ```text
 LAN-Drop/
@@ -269,131 +335,147 @@ LAN-Drop/
         └── logo.png
 ```
 
+Incoming files are stored in the host's configured upload directory, normally the `LAN-Drop` folder on the Desktop.
+
+**Important:** Keep the upload page open until the upload finishes. Avoid refreshing or closing the page during an active transfer.
+
 ---
 
 ## Downloading Files
 
-Open:
+Open the download address in a browser:
 
 ```text
 http://HOST-IP:3000
 ```
 
-Features:
+You can:
 
-- Browse directories
-- Download files
-- Navigate folders
-- View file sizes
+- Browse shared directories.
+- Navigate into folders.
+- View file sizes.
+- Download individual files.
+
+The files available for download come from the directory selected for sharing when LAN-Drop starts.
 
 ---
 
 ## Project Structure
 
 ```text
-lan-drop/
-
+Lan-Drop/
 ├── server.py
 ├── config.py
 ├── handlers/
 │   ├── download.py
 │   └── upload.py
-│
 ├── templates/
 │   ├── download.html
 │   └── upload.html
-│
 ├── utils/
 │   ├── file_utils.py
 │   ├── network.py
 │   ├── qr.py
 │   └── templates.py
-│
-├── uploads/
-│
 ├── README.md
-├── LICENSE
-
+└── LICENSE
 ```
+
+The upload destination is configured by the application and may be created at runtime.
 
 ---
 
 ## Troubleshooting
 
-### Cannot Access From Phone
+### Cannot Access LAN-Drop from a Phone or Another Computer
 
-Check:
+Check the following:
 
-- Both devices are on the same network
-- Firewall is not blocking connections
-- Correct IP address is being used
+1. Both devices are connected to the same local network.
+2. The host computer is running LAN-Drop.
+3. You are using the correct LAN IP address printed by the application.
+4. Ports `3000` and `3001` are not blocked by the host firewall.
+5. Your router or Wi-Fi network does not have client isolation enabled.
 
----
+On Windows, allow Python through Windows Firewall on your trusted private network if necessary. On Linux, check your firewall rules if the ports are unreachable.
 
 ### Upload Fails
 
-Verify:
-
-```bash
-DO not referesh page until Uploading Finishes.
-```
-
----
+- Keep the upload page open until the transfer completes.
+- Check that the host has enough free disk space.
+- Check the terminal for errors.
+- Confirm that the upload destination is writable.
+- Try a smaller file to help determine whether the problem is related to file size, storage, or connectivity.
 
 ### Folder Upload Not Working
 
-Folder upload support depends on browser support.
+Folder uploads depend on browser support and how the browser exposes file-selection features.
 
-Recommended:
+Try a recent version of one of these browsers:
 
 - Chrome
-- Edge
+- Microsoft Edge
 - Brave
 - Opera
 
----
-
 ### QR Code Missing
 
-Install:
+QR-code generation is optional. First, check whether a supported QR generator is installed.
+
+**Linux:**
 
 ```bash
 sudo apt install qrencode
 ```
 
-Current QR generation is implemented using the Linux `qrencode` utility.
+**Windows:**
+
+```powershell
+python -m pip install qrcode
+```
+
+**macOS:**
+
+```bash
+brew install qrencode
+```
+
+If a QR code is still unavailable, use the download or upload URL printed in the terminal.
 
 ---
 
 ## Security Notice
 
-LAN-Drop is designed for trusted local networks.
+LAN-Drop is intended for use on **trusted local networks**.
 
-Do not expose the service directly to the public internet.
+- Do not expose its ports directly to the public internet.
+- Use it only on networks where you trust the connected devices.
+- Remember that other reachable devices may be able to access the sharing interfaces.
+- Stop the application when you have finished sharing files.
+
+LAN-Drop is designed for simple local file transfers, not as a public-facing file server.
 
 ---
 
 ## Future Plans
 
-Potential future improvements:
+Potential improvements include:
 
-- Native Windows QR support
-- Native macOS QR support
-- Drag and drop uploads
+- Drag-and-drop uploads
 - Upload speed indicators
 - Download progress indicators
 - Archive download support
 - User-configurable ports
-- Device name detection
+- Improved device-name detection
 - Optional authentication
 
 ---
 
 ## License
 
-Released under the MIT License.
+Released under the **MIT License**.
 
-See the LICENSE file for details.
+See the [`LICENSE`](LICENSE) file for details.
 
 ---
 
@@ -401,4 +483,6 @@ See the LICENSE file for details.
 
 **Abhishek Singh Chauhan**
 
-Built as a practical networking and Python project to provide simple, fast, local network file sharing without relying on cloud services.
+Built as a practical Python and networking project to make local file sharing simple, fast, and accessible without relying on cloud services.
+
+**Repository:** [GitHub — LAN-Drop](https://github.com/Abhisheksinghchauhan192/Lan-Drop)

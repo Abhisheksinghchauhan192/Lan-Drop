@@ -14,7 +14,7 @@ Description:
 
 Supported Platforms:
     - Linux
-    - Window*
+    - Window
     - macOS
         
 """
@@ -152,21 +152,25 @@ if __name__ == "__main__":
     print("               LAN-Drop")
     print("=" * 50)
     print()
-    print("📂 Sharing:")
+    print("📂  Currentely Sharing:")
     print(f"   {SHARED_DIR}")
     print()
-    print("📥 Download:")
+    print("📱 To Download Files Scan QR (optional):")
+    print()
+    show_qr(download_url)
+    print()
+    print("📥 Or Use Download LINK :")
     print(f"   {download_url}")
     print()
-    print("📤 To Receive:")
+    print("📤 Send Files to This Machine Open Link :")
     print(f"   {upload_url}")
-    print()
-    print("📁 Incoming Files:")
-    print(f"   {UPLOAD_DIR}")
     print()
     print("📱 Receiving QR (optional):")
     print()
     show_qr(upload_url)
+    print()
+    print("📁 Incoming Files Will Be Saved At:")
+    print(f"   {UPLOAD_DIR}")
     print()
     print("Press Ctrl+C to stop.")
     print()
