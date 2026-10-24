@@ -42,27 +42,20 @@ Displays:
 Handles graceful shutdown.
 """
 
-from http.server import HTTPServer 
+from http.server import HTTPServer
 from socketserver import ThreadingMixIn
-import threading
 import signal
 import sys
-import config
+import threading
 from pathlib import Path
-from utils.qr import show_qr
+
+import config
+from handlers.download import DownloadHandler
+from handlers.upload import UploadHandler
 from utils.network import get_local_ip
+from utils.qr import show_qr
+from utils.file_utils import format_size
 
-from utils.file_utils import (
-    format_size,
-)
-
-from handlers.download import (
-    DownloadHandler
-)
-
-from handlers.upload import (
-    UploadHandler
-)
 
 if len(sys.argv) > 1:
     SHARED_DIR = Path(sys.argv[1]).expanduser().resolve()
@@ -78,82 +71,75 @@ if not SHARED_DIR.is_dir():
     sys.exit(1)
 
 
+TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 
-TEMPLATE_DIR = Path(__file__).parent / "templates"
-UPLOAD_DIR = Path.home() / "Desktop" / "LAN-Drop"
+# Keep incoming files on the user's Desktop when that directory exists.
+# On systems without a Desktop directory (or with a nonstandard home setup),
+# use a directory directly under the user's home instead.
+
+DESKTOP_DIR = Path.home() / "Desktop"
+if DESKTOP_DIR.is_dir():
+    UPLOAD_DIR = DESKTOP_DIR / "LAN-Drop"
+else:
+    UPLOAD_DIR = Path.home() / "LAN-Drop"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 config.SHARED_DIR = SHARED_DIR
 config.UPLOAD_DIR = UPLOAD_DIR
 
+
 download_server = None
 upload_server = None
+stop_event = threading.Event()
 
-# html template files helper
+
 def load_template(name):
-    with open(TEMPLATE_DIR / name, "r", encoding="utf-8") as f:
-        return f.read()
+    """Load an HTML template using a path relative to this file."""
+    with open(TEMPLATE_DIR / name, "r", encoding="utf-8") as file:
+        return file.read()
 
 
-# Upload logger for terminal output
 def log_upload(client_ip, filename, size):
-
-    print(
-        f"[UPLOAD] {filename} "
-        f"({format_size(size)}) "
-        f"from {client_ip}"
-    )
+    """Print a compact upload log entry."""
+    print(f"[UPLOAD] {filename} ({format_size(size)}) from {client_ip}")
 
 
-class ThreadingHTTPServer(
-    ThreadingMixIn,
-    HTTPServer
-):
+class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
-    
 
 
 def run_download_server():
     global download_server
-    download_server = ThreadingHTTPServer(
-        ("0.0.0.0", 3000),
-        DownloadHandler
-    )
+    download_server = ThreadingHTTPServer(("0.0.0.0", 3000), DownloadHandler)
     download_server.serve_forever()
 
 
 def run_upload_server():
     global upload_server
-    upload_server = ThreadingHTTPServer(
-        ("0.0.0.0", 3001),
-        UploadHandler
-    )
+    upload_server = ThreadingHTTPServer(("0.0.0.0", 3001), UploadHandler)
     upload_server.serve_forever()
 
 
-def shutdown_handler(sig, frame):
-    print("\n\nStopping LAN-Drop...")
-
-    if download_server:
-        download_server.shutdown()
-        download_server.server_close()
-
-    if upload_server:
-        upload_server.shutdown()
-        upload_server.server_close()
-
-    print("LAN-Drop stopped.")
-    sys.exit(0)
+def shutdown_handler(_sig, _frame):
+    """Ask the main thread to stop; cleanup happens outside the signal handler."""
+    stop_event.set()
 
 
-# Launcher 
+def stop_servers():
+    """Stop and close any servers that were successfully started."""
+    for server in (download_server, upload_server):
+        if server is not None:
+            server.shutdown()
+            server.server_close()
+
+
 if __name__ == "__main__":
-
     signal.signal(signal.SIGINT, shutdown_handler)
+    if hasattr(signal, "SIGTERM"):
+        signal.signal(signal.SIGTERM, shutdown_handler)
 
     t1 = threading.Thread(target=run_download_server, daemon=True)
     t2 = threading.Thread(target=run_upload_server, daemon=True)
-
     t1.start()
     t2.start()
 
@@ -161,36 +147,37 @@ if __name__ == "__main__":
     download_url = f"http://{ip}:3000"
     upload_url = f"http://{ip}:3001"
 
-
     print()
     print("=" * 50)
     print("               LAN-Drop")
     print("=" * 50)
     print()
-
-    print(f"📂 Sharing:")
+    print("📂 Sharing:")
     print(f"   {SHARED_DIR}")
-
     print()
-    print(f"📥 Download:")
+    print("📥 Download:")
     print(f"   {download_url}")
     print()
-    print(f"📤 To Receive:")
+    print("📤 To Receive:")
     print(f"   {upload_url}")
     print()
-    print(f"📁 Incoming Files:")
+    print("📁 Incoming Files:")
     print(f"   {UPLOAD_DIR}")
-
     print()
-    print("📱 Recieving  QR:")
+    print("📱 Receiving QR (optional):")
     print()
-
     show_qr(upload_url)
-
-
     print()
     print("Press Ctrl+C to stop.")
     print()
     print("=" * 50)
 
-    signal.pause()
+    try:
+        stop_event.wait()
+    except KeyboardInterrupt:
+        # Fallback in case the terminal delivers Ctrl+C as KeyboardInterrupt.
+        pass
+    finally:
+        print("\n\nStopping LAN-Drop...")
+        stop_servers()
+        print("LAN-Drop stopped.")

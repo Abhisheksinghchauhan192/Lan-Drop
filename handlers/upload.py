@@ -87,19 +87,27 @@ class UploadHandler(BaseHTTPRequestHandler):
         relative_path
     ):
 
-        relative_path = relative_path.replace(
-            "\\",
-            "/"
+        from pathlib import PurePosixPath
+
+        relative_path = PurePosixPath(
+            str(relative_path).replace("\\", "/")
         )
 
-        relative_path = str(
-            Path(relative_path)
-        )
+        if (
+            relative_path.is_absolute()
+            or not relative_path.parts
+            or any(part in ("", ".", "..") for part in relative_path.parts)
+            or relative_path.parts[0].endswith(":")
+        ):
+            raise ValueError("Invalid upload path")
 
-        target = (
-            config.UPLOAD_DIR /
-            relative_path
-        )
+        upload_dir = config.UPLOAD_DIR.resolve()
+        target = (upload_dir / Path(*relative_path.parts)).resolve()
+
+        try:
+            target.relative_to(upload_dir)
+        except ValueError:
+            raise ValueError("Upload path is outside the upload directory") from None
 
         target.parent.mkdir(
             parents=True,
@@ -463,11 +471,11 @@ LAN-Drop v1.0
             header_text = header_bytes.decode("utf-8", errors="replace")
             fn_match = re.search(r'filename="([^"]+)"', header_text)
             filename = fn_match.group(1) if fn_match else None
-
+            client_name = self.get_client_name()
             if filename:
                 target_path = self.get_upload_target(filename)
                 current_file = open(target_path, "wb")
-                print(f"[RECEIVING] {filename} -> {target_path}")
+                print(f"[RECEIVING] {filename} -> {target_path} by {client_name}")
 
             # Stream payload directly to disk until next boundary
             next_boundary = b"\r\n" + delimiter
@@ -479,7 +487,7 @@ LAN-Drop v1.0
                         current_file.write(buffer[:idx])
                         current_file.close()
                         current_file = None
-                        relative = str(target_path.relative_to(config.UPLOAD_DIR))
+                        relative = str(target_path.relative_to(config.UPLOAD_DIR.resolve()))
                         saved_files.append(relative)
                     buffer = buffer[idx + len(next_boundary):]
                     break

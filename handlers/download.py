@@ -35,13 +35,15 @@ Provides:
 from http.server import (
     BaseHTTPRequestHandler
 )
+from pathlib import Path
 import config
 from utils.templates import (
     load_template
 )
 import mimetypes
 from urllib.parse import (
-    unquote
+    unquote,
+    quote
 )
 
 from html import escape
@@ -87,7 +89,7 @@ class DownloadHandler(BaseHTTPRequestHandler):
 
         if directory != config.SHARED_DIR:
 
-            parent = "/" + str(relative.parent)
+            parent = "/" + quote(relative.parent.as_posix(), safe="/") if relative.parent != Path(".") else "/"
 
             parent_html = (
                 f'<p><a href="{parent}">⬅ Parent Directory</a></p>'
@@ -104,8 +106,9 @@ class DownloadHandler(BaseHTTPRequestHandler):
         for entry in entries:
 
             icon = get_icon(entry)
-            rel_path = "/" + str(
-                entry.relative_to(config.SHARED_DIR)
+            rel_path = "/" + quote(
+                entry.relative_to(config.SHARED_DIR).as_posix(),
+                safe="/"
             )
 
             name = escape(entry.name)
@@ -130,7 +133,7 @@ class DownloadHandler(BaseHTTPRequestHandler):
 
         html = html.replace(
             "{{CURRENT_PATH}}",
-            escape(str(relative))
+            escape(relative.as_posix())
         )
 
         html = html.replace(

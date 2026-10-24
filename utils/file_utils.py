@@ -2,14 +2,30 @@ from pathlib import Path
 
 
 def sanitize_filename(name):
-    return Path(name).name
+    return Path(str(name).replace("\\", "/")).name
 
 
 def ensure_upload_path(upload_dir, relative_path):
 
-    relative_path = relative_path.replace("\\", "/")
+    from pathlib import PurePosixPath
 
-    target = upload_dir / relative_path
+    relative_path = PurePosixPath(str(relative_path).replace("\\", "/"))
+
+    if (
+        relative_path.is_absolute()
+        or not relative_path.parts
+        or any(part in ("", ".", "..") for part in relative_path.parts)
+        or relative_path.parts[0].endswith(":")
+    ):
+        raise ValueError("Invalid upload path")
+
+    upload_dir = Path(upload_dir).resolve()
+    target = (upload_dir / Path(*relative_path.parts)).resolve()
+
+    try:
+        target.relative_to(upload_dir)
+    except ValueError:
+        raise ValueError("Upload path is outside the upload directory") from None
 
     target.parent.mkdir(
         parents=True,
