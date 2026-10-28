@@ -12,16 +12,10 @@ Description:
 
 Supported Platforms:
     - Linux
-    - Window*
+    - Windows
     - macOS
-        
 """
-#
-#
-#
-#
-#
-#
+
 """
 Upload Handler
 
@@ -33,14 +27,13 @@ Provides:
 - Folder structure preservation
 - Duplicate filename protection
 
-Uses python-multipart for efficient
-multipart form parsing.
+Parses multipart form data incrementally so large uploads do not need to
+be held entirely in memory.
 """
 
 from http.server import (
     BaseHTTPRequestHandler
 )
-from pathlib import Path
 import re
 from utils.templates import (
     load_template
@@ -55,18 +48,23 @@ from utils.file_utils import (
 )
 
 import config
+from handlers import get_client_name
 
 # Upload Handler
 class UploadHandler(BaseHTTPRequestHandler):
+    """Handle the upload form, streamed uploads, and the received-file inbox."""
 
     def log_message(self, format, *args):
+        """Suppress the base handler's default access log."""
         return
+
     def do_GET(self):
+        """Serve the upload form or the received-file inbox."""
         if self.path == "/uploads":
             return self.show_uploads()
         html = load_template("upload.html")
 
-        encoded = html.encode()
+        encoded = html.encode("utf-8")
 
         self.send_response(200)
         self.send_header(
@@ -86,34 +84,9 @@ class UploadHandler(BaseHTTPRequestHandler):
         self,
         relative_path
     ):
+        """Validate a relative path and choose a non-conflicting target."""
 
-        from pathlib import PurePosixPath
-
-        relative_path = PurePosixPath(
-            str(relative_path).replace("\\", "/")
-        )
-
-        if (
-            relative_path.is_absolute()
-            or not relative_path.parts
-            or any(part in ("", ".", "..") for part in relative_path.parts)
-            or relative_path.parts[0].endswith(":")
-        ):
-            raise ValueError("Invalid upload path")
-
-        upload_dir = config.UPLOAD_DIR.resolve()
-        target = (upload_dir / Path(*relative_path.parts)).resolve()
-
-        try:
-            target.relative_to(upload_dir)
-        except ValueError:
-            raise ValueError("Upload path is outside the upload directory") from None
-
-        target.parent.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
+        target = ensure_upload_path(config.UPLOAD_DIR, relative_path)
         if target.exists():
 
             target = get_unique_filename(
@@ -126,6 +99,7 @@ class UploadHandler(BaseHTTPRequestHandler):
         self,
         saved_files
     ):
+        """Send a page listing the files saved by a completed upload."""
 
         files_html = "".join(
             f"<li>{escape(name)}</li>"
@@ -246,7 +220,7 @@ Successfully uploaded {len(saved_files)} file(s)
 </div>
 
 <div class="footer">
-LAN-Drop v1.0
+LAN-Drop v1.1.1
 </div>
 
 </div>
@@ -277,124 +251,8 @@ LAN-Drop v1.0
         self.wfile.write(encoded)
 
 
-    # get the client Infromation
-    def get_client_name(self):
-
-        ip = self.client_address[0]
-
-        user_agent = self.headers.get(
-            "User-Agent",
-            ""
-        )
-
-        if "Android" in user_agent:
-            return f"Android ({ip})"
-
-        if "iPhone" in user_agent:
-            return f"iPhone ({ip})"
-
-        if "Windows" in user_agent:
-            return f"Windows PC ({ip})"
-
-        if "Linux" in user_agent:
-            return f"Linux PC ({ip})"
-
-        return ip
-
-
-    # Uncomment below method for using Ram buffer and No Stremed Output 
-    # This one will chock ram for large files.
-    # if streamed one doesn't works for your system comment that one and use this one instead
-    # but keep in mind the treadoff of this method.
-    #It Reads entire request into memory.
-
-    # def do_POST(self):
-
-    #     content_type = self.headers.get(
-    #         "Content-Type"
-    #     )
-
-    #     if not content_type:
-    #         self.send_error(400)
-    #         return
-
-    #     if "boundary=" not in content_type:
-    #         self.send_error(400)
-    #         return
-
-    #     boundary = (
-    #         content_type
-    #         .split("boundary=")[-1]
-    #         .encode()
-    #     )
-
-    #     content_length = int(
-    #         self.headers.get(
-    #             "Content-Length",
-    #             0
-    #         )
-    #     )
-
-    #     data = self.rfile.read(
-    #         content_length
-    #     )
-
-    #     parts = data.split(
-    #         b"--" + boundary
-    #     )
-
-    #     saved_files = []
-
-    #     for part in parts:
-
-    #         if b'filename="' not in part:
-    #             continue
-
-    #         try:
-
-    #             header, filedata = part.split(
-    #                 b"\r\n\r\n",
-    #                 1
-    #             )
-
-    #         except ValueError:
-    #             continue
-
-    #         filename = self.parse_filename(
-    #             header
-    #         )
-
-    #         if not filename:
-    #             continue
-
-    #         filedata = filedata.rsplit(
-    #             b"\r\n",
-    #             1
-    #         )[0]
-
-    #         saved_path = self.save_uploaded_file(
-    #             filename,
-    #             filedata
-    #         )
-
-    #         saved_files.append(
-    #             saved_path
-    #         )
-
-    #     if not saved_files:
-
-    #         self.send_error(400)
-    #         return
-
-    #     self.send_success_page(
-    #         saved_files
-    #     )
-
-
-    # This one is Streamed Upload using the python library multipart 
-    # which need to be installed systemwide 
-    
     def do_POST(self):
+        """Stream multipart file data to validated targets on disk."""
         content_type = self.headers.get("Content-Type", "")
         if "multipart/form-data" not in content_type:
             self.send_error(400, "Expected multipart/form-data")
@@ -414,7 +272,6 @@ LAN-Drop v1.0
             self.send_error(411, "Length Required")
             return
 
-        client = self.get_client_name()
         saved_files = []
 
         # Stream state
@@ -471,7 +328,7 @@ LAN-Drop v1.0
             header_text = header_bytes.decode("utf-8", errors="replace")
             fn_match = re.search(r'filename="([^"]+)"', header_text)
             filename = fn_match.group(1) if fn_match else None
-            client_name = self.get_client_name()
+            client_name = get_client_name(self.client_address, self.headers)
             if filename:
                 target_path = self.get_upload_target(filename)
                 current_file = open(target_path, "wb")
@@ -515,8 +372,8 @@ LAN-Drop v1.0
         self.send_success_page(saved_files)
 
 
-    # showing LAN-Drop files
     def show_uploads(self):
+        """Render and send an HTML listing of received files."""
 
         items = []
 
@@ -605,7 +462,7 @@ LAN-Drop v1.0
     </html>
     """
 
-        encoded = html.encode()
+        encoded = html.encode("utf-8")
 
         self.send_response(200)
 

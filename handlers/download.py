@@ -12,14 +12,10 @@ Description:
 
 Supported Platforms:
     - Linux
-    - Window*
+    - Windows
     - macOS
-        
-"""    
-#
-#
-#
-#
+"""
+
 """
 Download Handler
 
@@ -52,14 +48,18 @@ from utils.file_utils import (
     format_size,
     get_icon
 )
+from handlers import get_client_name
 
 
 class DownloadHandler(BaseHTTPRequestHandler):
+    """Serve directory listings and files from the configured shared folder."""
 
     def log_message(self, format, *args):
+        """Suppress the base handler's default access log."""
         return
 
     def do_GET(self):
+        """Route a GET request to a directory listing or file response."""
 
         request_path = unquote(self.path.split("?", 1)[0])
 
@@ -82,6 +82,7 @@ class DownloadHandler(BaseHTTPRequestHandler):
         self.send_file(target)
 
     def show_directory(self, directory):
+        """Render and send an HTML listing for a shared directory."""
 
         relative = directory.relative_to(config.SHARED_DIR)
 
@@ -164,33 +165,11 @@ class DownloadHandler(BaseHTTPRequestHandler):
 
         self.wfile.write(encoded)
 
-    def get_client_name(self):
-
-        ip = self.client_address[0]
-
-        user_agent = self.headers.get(
-            "User-Agent",
-            ""
-        )
-
-        if "Android" in user_agent:
-            return f"Android ({ip})"
-
-        if "iPhone" in user_agent:
-            return f"iPhone ({ip})"
-
-        if "Windows" in user_agent:
-            return f"Windows PC ({ip})"
-
-        if "Linux" in user_agent:
-            return f"Linux PC ({ip})"
-
-        return ip
-
     def send_file(self, file_path):
+        """Stream a validated file to the requesting client."""
 
         mime_type, _ = mimetypes.guess_type(file_path)
-        client = self.get_client_name()
+        client = get_client_name(self.client_address, self.headers)
             
         if mime_type is None:
             mime_type = "application/octet-stream"
@@ -210,5 +189,3 @@ class DownloadHandler(BaseHTTPRequestHandler):
         with open(file_path, "rb") as f:
             while chunk := f.read(1024 * 1024):
                 self.wfile.write(chunk)
-
-

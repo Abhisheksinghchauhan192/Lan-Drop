@@ -14,32 +14,8 @@ Description:
 
 Supported Platforms:
     - Linux
-    - Window
+    - Windows
     - macOS
-        
-"""
-
-#
-#
-#
-#
-#
-#
-"""
-LAN-Drop Main Entry Point
-
-Starts:
-
-- Download server
-- Upload server
-
-Displays:
-
-- Local URLs
-- Network URLs
-- QR Code
-
-Handles graceful shutdown.
 """
 
 from http.server import HTTPServer
@@ -54,7 +30,6 @@ from handlers.download import DownloadHandler
 from handlers.upload import UploadHandler
 from utils.network import get_local_ip
 from utils.qr import show_qr
-from utils.file_utils import format_size
 
 
 if len(sys.argv) > 1:
@@ -70,8 +45,6 @@ if not SHARED_DIR.is_dir():
     print(f"Error: {SHARED_DIR} is not a directory")
     sys.exit(1)
 
-
-TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 
 # Keep incoming files on the user's Desktop when that directory exists.
 # On systems without a Desktop directory (or with a nonstandard home setup),
@@ -93,28 +66,31 @@ upload_server = None
 stop_event = threading.Event()
 
 
-def load_template(name):
-    """Load an HTML template using a path relative to this file."""
-    with open(TEMPLATE_DIR / name, "r", encoding="utf-8") as file:
-        return file.read()
-
-
-def log_upload(client_ip, filename, size):
-    """Print a compact upload log entry."""
-    print(f"[UPLOAD] {filename} ({format_size(size)}) from {client_ip}")
-
-
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
+    """HTTP server that handles each request in its own daemon thread."""
+
     daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        """Ignore expected client disconnects but preserve real tracebacks."""
+        exception = sys.exc_info()[1]
+        if isinstance(
+            exception,
+            (BrokenPipeError, ConnectionAbortedError, ConnectionResetError),
+        ):
+            return
+        super().handle_error(request, client_address)
 
 
 def run_download_server():
+    """Start the threaded HTTP server for shared-file downloads."""
     global download_server
     download_server = ThreadingHTTPServer(("0.0.0.0", 3000), DownloadHandler)
     download_server.serve_forever()
 
 
 def run_upload_server():
+    """Start the threaded HTTP server for incoming file uploads."""
     global upload_server
     upload_server = ThreadingHTTPServer(("0.0.0.0", 3001), UploadHandler)
     upload_server.serve_forever()
@@ -152,7 +128,7 @@ if __name__ == "__main__":
     print("               LAN-Drop")
     print("=" * 50)
     print()
-    print("📂  Currentely Sharing:")
+    print("📂  Currently Sharing:")
     print(f"   {SHARED_DIR}")
     print()
     print("📱 To Download Files Scan QR (optional):")

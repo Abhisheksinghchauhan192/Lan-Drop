@@ -1,11 +1,15 @@
+"""Filesystem validation and presentation helpers for LAN-Drop."""
+
 from pathlib import Path
 
 
 def sanitize_filename(name):
+    """Return only the final filename component from a user-supplied name."""
     return Path(str(name).replace("\\", "/")).name
 
 
 def ensure_upload_path(upload_dir, relative_path):
+    """Validate an upload path and create its parent directory."""
 
     from pathlib import PurePosixPath
 
@@ -36,6 +40,7 @@ def ensure_upload_path(upload_dir, relative_path):
 
 
 def format_size(size):
+    """Format a byte count using a human-readable binary unit."""
 
     units = ["B", "KB", "MB", "GB", "TB"]
 
@@ -52,6 +57,7 @@ def format_size(size):
 
 
 def get_unique_filename(filepath: Path) -> Path:
+    """Return an unused path, adding a numbered suffix when necessary."""
 
     if not filepath.exists():
         return filepath
@@ -74,6 +80,7 @@ def get_unique_filename(filepath: Path) -> Path:
 
 
 def get_icon(path):
+    """Return a display emoji based on a path's type or extension."""
 
     if path.is_dir():
         return "📁"
