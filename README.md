@@ -6,7 +6,7 @@ LAN-Drop is a Python-based tool that lets devices connected to the same local ne
 
 - **No required third-party Python dependencies**
 - **Two simple web interfaces:** download and upload
-- **Tested on Cross-Plateforms**
+- **Tested across multiple platforms**
 - **Mobile-friendly and supports large-file uploads**
 
 > **Performance:** Speeds of 50+ Mbps were observed during testing over Wi-Fi 5 with an Android device. Actual performance depends on the network, Wi-Fi signal, hardware, and connected devices.
@@ -238,7 +238,7 @@ python3 server.py
 python server.py
 ```
 
-By default, LAN-Drop shares the directory configured as its default shared directory. When running it directly from the project directory, this is normally the directory containing `server.py`.
+By default, LAN-Drop shares the current working directory. When you run it from the project directory, this is normally the directory containing `server.py`.
 
 ### 2. Share a Custom Directory
 
@@ -358,6 +358,10 @@ You can:
 
 The files available for download come from the directory selected for sharing when LAN-Drop starts.
 
+LAN-Drop currently downloads individual files. It does not yet package an entire folder into a ZIP archive for download(intentional Design).
+
+But you can always zip it yourself then share it  😎
+
 ---
 
 ## Project Structure
@@ -456,6 +460,56 @@ LAN-Drop is intended for use on **trusted local networks**.
 LAN-Drop is designed for simple local file transfers, not as a public-facing file server.
 
 ---
+
+## Tips
+
+### Create a Launch Shortcut
+
+You can create a small command-line shortcut so LAN-Drop can be started from any terminal without changing to the project directory first. Replace the repository path in the examples with the absolute path on your computer.
+
+**Linux and macOS**
+
+For Bash or Zsh, add a shell function to `~/.bashrc` or `~/.zshrc`:
+
+```bash
+landrop() {
+    python3 "/path/to/Lan-Drop/server.py" "$@"
+}
+```
+
+Reload the shell configuration or open a new terminal, then start LAN-Drop with:
+
+```bash
+landrop
+landrop "/path/to/folder-to-share"
+```
+
+For Fish, add the equivalent function to `~/.config/fish/config.fish`:
+
+```fish
+function landrop
+    python3 "/path/to/Lan-Drop/server.py" $argv
+end
+```
+
+**Windows PowerShell**
+
+Create a function in your PowerShell profile:
+
+```powershell
+function landrop {
+    python "C:\path\to\Lan-Drop\server.py" @args
+}
+```
+
+After restarting PowerShell, use:
+
+```powershell
+landrop
+landrop "C:\path\to\folder-to-share"
+```
+
+The shortcut passes all additional arguments to `server.py`, so you can still choose a custom shared directory.
 
 ## Future Plans
 
